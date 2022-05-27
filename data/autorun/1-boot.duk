@@ -1,0 +1,1284 @@
+// app.openWindow("MainWindow");
+var width = 70;
+var height = 20;
+var jdict;
+
+const style = {
+    sep:app.shell("tput setaf 3"),
+    kana:app.shell("tput setaf 6"),
+    tx:app.shell("tput setaf 8"),
+    reset:app.shell("tput sgr0")
+};
+
+console.styled = function() {
+    var line = "";
+    for (var i = 0; i < arguments.length; ++i) {
+        line += arguments[i];
+    }
+    line = line.replace(/\{([a-z]+)\{([^}]+)\}\}/g, function(m, k, t){return style[k] + t + style.reset;});
+    console.logRaw(line);
+};
+
+const conjugatorData = {
+    v1:{
+        match:"る",
+        replace:[
+            "ます",
+            "ない",
+            "ません",
+            "た",
+            "ました",
+            "なかった",
+            "ませんでした",
+            "て",
+            "まして ",
+            "ないで",
+            "ませんで ",
+            "なくて",
+            "ている",
+            "ています",
+            "ていない",
+            "ていません",
+            "よう",
+            "ましょう",
+            "まい",
+            "ますまい",
+            "ろ",
+            "よ",
+            "なさい",
+            "るな",
+            "なさるな",
+            "てください",
+            "ないでください",
+            "れば",
+            "なければ",
+            "たら",
+            "ましたら",
+            "なかったら",
+            "ませんでしたら",
+            "られる",
+            "られます",
+            "られない",
+            "られません",
+            "られる",
+            "られます",
+            "られない",
+            "られません",
+            "させる",
+            "させます",
+            "させない",
+            "させません",
+            "させられる",
+            "させられます",
+            "させられない",
+            "させられません"
+        ]
+    },
+
+    v5b:{
+        match:"ぶ",
+        replace:[
+            "びます",
+            "ばない",
+            "びません",
+            "んだ",
+            "びました",
+            "ばなかった",
+            "びませんでした",
+            "んで",
+            "びまして",
+            "ばないで",
+            "びませんで",
+            "ばなくて",
+            "んでいる",
+            "んでいます",
+            "んでいない",
+            "んでいません",
+            "ぼう",
+            "びましょう",
+            "ぶまい",
+            "びますまい",
+            "べ",
+            "びなさい",
+            "ぶな",
+            "びなさるな",
+            "んでください",
+            "ばないでください",
+            "べば",
+            "ばなければ",
+            "んだら",
+            "びましたら",
+            "ばなかったら",
+            "びませんでしたら",
+            "べる",
+            "べます",
+            "べない",
+            "べません",
+            "ばれる",
+            "ばれます",
+            "ばれない",
+            "ばれません",
+            "ばせる",
+            "ばせます",
+            "ばせない",
+            "ばせません",
+            "ばせられる",
+            "ばせられます",
+            "ばせられない",
+            "ばせられません"
+        ]
+    },
+
+    v5g:{
+        match:"ぐ",
+        replace:[
+            "ぎます",
+            "がない",
+            "ぎません",
+            "いだ",
+            "ぎました",
+            "がなかった",
+            "ぎませんでした",
+            "いで",
+            "ぎまして",
+            "がないで",
+            "ぎませんで",
+            "がなくて",
+            "いでいる",
+            "いでいます",
+            "いでいない",
+            "いでいません",
+            "ごう",
+            "ぎましょう",
+            "ぐまい",
+            "ぎますまい",
+            "げ",
+            "ぎなさい",
+            "ぐな",
+            "ぎなさるな",
+            "いでください",
+            "がないでください",
+            "げば",
+            "がなければ",
+            "いだら",
+            "ぎましたら",
+            "がなかったら",
+            "ぎませんでしたら",
+            "げる",
+            "げます",
+            "げない",
+            "げません",
+            "がれる",
+            "がれます",
+            "がれない",
+            "がれません",
+            "がせる",
+            "がせます",
+            "がせない",
+            "がせません",
+            "がせられる",
+            "がせられます",
+            "がせられない",
+            "がせられません"
+        ]
+    },
+
+    v5k:{
+        match:"く",
+        replace:[
+            "きます",
+            "かない",
+            "きません",
+            "いた",
+            "きました",
+            "かなかった",
+            "きませんでした",
+            "いて",
+            "きまして",
+            "かないで",
+            "きませんで",
+            "かなくて",
+            "いている",
+            "いています",
+            "いていない",
+            "いていません",
+            "こう",
+            "きましょう",
+            "くまい",
+            "きますまい",
+            "け",
+            "きなさい",
+            "くな",
+            "きなさるな",
+            "いてください",
+            "かないでください",
+            "けば",
+            "かなければ",
+            "いたら",
+            "きましたら",
+            "かなかったら",
+            "きませんでしたら",
+            "ける",
+            "けます",
+            "けない",
+            "けません",
+            "かれる",
+            "かれます",
+            "かれない",
+            "かれません",
+            "かせる",
+            "かせます",
+            "かせない",
+            "かせません",
+            "かせられる",
+            "かせられます",
+            "かせられない",
+            "かせられません"
+        ]
+    },
+
+    v5m:{
+        match:"む",
+        replace:[
+            "みます",
+            "まない",
+            "みません",
+            "んだ",
+            "みました",
+            "まなかった",
+            "みませんでした",
+            "んで",
+            "みまして",
+            "まないで",
+            "みませんで",
+            "まなくて",
+            "んでいる",
+            "んでいます",
+            "んでいない",
+            "んでいません",
+            "もう",
+            "みましょう",
+            "むまい",
+            "みますまい",
+            "め",
+            "みなさい",
+            "むな",
+            "みなさるな",
+            "んでください",
+            "まないでください",
+            "めば",
+            "まなければ",
+            "んだら",
+            "みましたら",
+            "まなかったら",
+            "みませんでしたら",
+            "める",
+            "めます",
+            "めない",
+            "めません",
+            "まれる",
+            "まれます",
+            "まれない",
+            "まれません",
+            "ませる",
+            "ませます",
+            "ませない",
+            "ませません",
+            "ませられる",
+            "ませられます",
+            "ませられない",
+            "ませられません"
+        ]
+    },
+
+    v5n:{
+        match:"ぬ",
+        replace:{
+            "ます":"[does], will [do]",
+            "なない":"doesn't [do]",
+            "にません":"doesn't [do]",
+
+            "んだ":"[did]",
+            "ななかった":"didn't [do]",
+            "にませんでした":"didn't [do]",
+
+            "んで":"te-form",
+            "にまして":"te-form",
+            "なないで":"te-form",
+            "にませんで":"te-form",
+            "ななくて":"te-form",
+
+            "んでいる":"[doing]",
+            "んでいます":"[doing]",
+            "んでいない":"not [doing]",
+            "んでいません":"not [doing]",
+
+            "のう":"let's [do]!, I/we will [do], I/we intend to [do]",
+            "にましょう":"let's [do]!, I/we will [do], I/we intend to [do]",
+
+            "ぬまい":"I will not [do], I do not intend to [do]",
+            "にますまい":"I will not [do], I do not intend to [do]",
+
+            "ね":"[do]!",
+            "になさい":"[do]!",
+            "ぬな":"don't [do]!",
+            "になさるな":"don't [do]!",
+
+            "んでください":"please [do]",
+            "なないでください":"please don't [do]",
+
+            "ねば":"if X [does], if X [is ~]",
+            "ななければ":"if X doesn't [do], if X [is not ~]",
+
+            "んだら":"if X were to [do], when X [does]",
+            "にましたら":"if X were to [do], when X [does]",
+            "ななかったら":"if X weren't to [do], when X doesn't [do]",
+            "にませんでしたら":"if X weren't to [do], when X doesn't [do]",
+
+            "ねる":"be able to [do], can [do]",
+            "ねます":"be able to [do], can [do]",
+            "ねない":"not be able to [do], can't [do]",
+            "ねません":"not be able to [do], can't [do]",
+
+
+            "なれる":"is [done] (by ...), will be [done] (by ...)",
+            "なれます":"is [done] (by ...), will be [done] (by ...)",
+            "なれない":"isn't [done] (by ...), will not be [done] (by ...)",
+            "なれません":"isn't [done] (by ...), will not be [done] (by ...)",
+
+            "なせる":"makes/will make (someone) [do]",
+            "なせます":"makes/will make (someone) [do]",
+
+            "なせない":"doesn't/won't make (someone) [do]",
+            "なせません":"doesn't/won't make (someone) [do]"
+        }
+    },
+
+    v5r:{
+        match:"る",
+        replace:[
+            "ります",
+            "らない",
+            "りません",
+            "った",
+            "りました",
+            "らなかった",
+            "りませんでした",
+            "って",
+            "りまして",
+            "らないで",
+            "りませんで",
+            "らなくて",
+            "っている",
+            "っています",
+            "っていない",
+            "っていません",
+            "ろう",
+            "りましょう",
+            "るまい",
+            "りますまい",
+            "れ",
+            "りなさい",
+            "るな",
+            "りなさるな",
+            "ってください",
+            "らないでください",
+            "れば",
+            "らなければ",
+            "ったら",
+            "りましたら",
+            "らなかったら",
+            "りませんでしたら",
+            "れる",
+            "れます",
+            "れない",
+            "れません",
+            "られる",
+            "られます",
+            "られない",
+            "られません",
+            "らせる",
+            "らせます",
+            "らせない",
+            "らせません",
+            "らせられる",
+            "らせられます",
+            "らせられない",
+            "らせられません"
+        ]
+    },
+
+    v5s:{
+        match:"す",
+        replace:[
+            "します",
+            "さない",
+            "しません",
+            "した",
+            "しました",
+            "さなかった",
+            "しませんでした",
+            "して",
+            "しまして",
+            "さないで",
+            "しませんで",
+            "さなくて",
+            "している",
+            "しています",
+            "していない",
+            "していません",
+            "そう",
+            "しましょう",
+            "すまい",
+            "しますまい",
+            "せ",
+            "しなさい",
+            "すな",
+            "しなさるな",
+            "してください",
+            "さないでください",
+            "せば",
+            "さなければ",
+            "したら",
+            "しましたら",
+            "さなかったら",
+            "しませんでしたら",
+            "せる",
+            "せます",
+            "せない",
+            "せません",
+            "される",
+            "されます",
+            "されない",
+            "されません",
+            "させる",
+            "させます",
+            "させない",
+            "させません",
+            "させられる",
+            "させられます",
+            "させられない",
+            "させられません"
+        ]
+    },
+
+    v5t:{
+        match:"つ",
+        replace:[
+            "持ちます",
+            "持たない",
+            "持ちません",
+            "持った",
+            "持ちました",
+            "持たなかった",
+            "持ちませんでした",
+            "持って",
+            "持ちまして",
+            "持たないで",
+            "持ちませんで",
+            "持たなくて",
+            "持っている",
+            "持っています",
+            "持っていない",
+            "持っていません",
+            "持とう",
+            "持ちましょう",
+            "持つまい",
+            "持ちますまい",
+            "持て",
+            "持ちなさい",
+            "持つな",
+            "持ちなさるな",
+            "持ってください",
+            "持たないでください",
+            "持てば",
+            "持たなければ",
+            "持ったら",
+            "持ちましたら",
+            "持たなかったら",
+            "持ちませんでしたら",
+            "持てる",
+            "持てます",
+            "持てない",
+            "持てません",
+            "持たれる",
+            "持たれます",
+            "持たれない",
+            "持たれません",
+            "持たせる",
+            "持たせます",
+            "持たせない",
+            "持たせません",
+            "持たせられる",
+            "持たせられます",
+            "持たせられない",
+            "持たせられません"
+        ]
+    },
+
+    v5u:{
+        match:"う",
+        replace:[
+            "います",
+            "わない",
+            "いません",
+            "った",
+            "いました",
+            "わなかった",
+            "いませんでした",
+            "って",
+            "いまして",
+            "わないで",
+            "いませんで",
+            "わなくて",
+            "っている",
+            "っています",
+            "っていない",
+            "っていません",
+            "おう",
+            "いましょう",
+            "うまい",
+            "いますまい",
+            "え",
+            "いなさい",
+            "うな",
+            "いなさるな",
+            "ってください",
+            "わないでください",
+            "えば",
+            "わなければ",
+            "ったら",
+            "いましたら",
+            "わなかったら",
+            "いませんでしたら",
+            "える",
+            "えます",
+            "えない",
+            "えません",
+            "われる",
+            "われます",
+            "われない",
+            "われません",
+            "わせる",
+            "わせます",
+            "わせない",
+            "わせません",
+            "わせられる",
+            "わせられます",
+            "わせられない",
+            "わせられません"
+        ]
+    },
+
+    "vs-i":{
+        match:"する",
+        replace:[
+            "します",
+            "しない",
+            "しません",
+            "した",
+            "しました",
+            "しなかった",
+            "しませんでした",
+            "して",
+            "しまして",
+            "しないで",
+            "しませんで",
+            "しなくて",
+            "している",
+            "しています",
+            "していない",
+            "していません",
+            "しよう",
+            "しましょう",
+            "するまい",
+            "しますまい",
+            "しろ",
+            "しなさい",
+            "するな",
+            "しなさるな",
+            "してください",
+            "しないでください",
+            "すれば",
+            "しなければ",
+            "したら",
+            "しましたら",
+            "しなかったら",
+            "しませんでしたら",
+            "できる",
+            "できます",
+            "できない",
+            "できません",
+            "される",
+            "されます",
+            "されない",
+            "されません",
+            "させる",
+            "させます",
+            "させない",
+            "させません",
+            "させられる",
+            "させられます",
+            "させられない",
+            "させられません"
+        ]
+    }
+};
+
+const conjugators = {};
+
+(function(){
+    for (var k in conjugatorData) {
+        conjugators[k] = (function(data, word){
+            var result = [];
+            var root = word.substr(0, word.length - 1);
+            result.push(root);
+            var replace = data.replace;
+            if (replace.length) {
+                for (var i = 0; i < replace.length; ++i) {
+                    result.push(root + replace[i]);
+                }
+            } else {
+                for (var k in replace) {
+                    result.push(root + k);
+                }
+            }
+            return result;
+        }).bind(null, conjugatorData[k]);
+    }
+})();
+
+function conjugate(word, type) {
+    if (type in conjugators)
+        return conjugators[type](word);
+    return [];
+}
+
+function clearScreen() {
+    console.logRaw("\033[1;1H\033[2J")
+}
+
+function Reader(bookName, language, bookmark){
+    var bookFilePath = "%appdata/books/" + bookName + "-" + language + ".txt";
+    var lines = (app.parse(bookFilePath) || "")
+        .split("\n")
+        .filter(function(line){return line.trim().length > 0;});
+    var position = 0;
+    var column = -1;
+    var columnCount = 0;
+    var dict;
+    var lastTranslation;
+    var currentEntry, currentEntryKey;
+    var selection = {};
+    var selectionDefaults = {};
+    var advance = false;
+    var exploded;
+
+    if (language in bookmark) {
+        position = bookmark[language].position|0;
+        selection = bookmark[language].selection;
+        selectionDefaults = bookmark[language].selectionDefaults;
+        if (!selection || typeof selection != "object")
+            selection = {};
+        if (!selectionDefaults || typeof selectionDefaults != "object")
+            selectionDefaults = {};
+    }
+
+    if (lines.length == 0) {
+        console.log("could not read %appdata/books/" + bookName + "-" + language + ".txt");
+    }
+
+    function save() {
+        app.write(bookFilePath, lines.join("\n"));
+    }
+
+    this.empty = function(){
+        return lines.length == 0;
+    };
+
+    this.bookmark = function(obj) {
+        obj[language] = {
+            position,
+            selection,
+            selectionDefaults
+        };
+    };
+
+    this.position = function() {
+        return position;
+    };
+
+    this.setPosition = function(np) {
+        position = np;
+        column = -1;
+    };
+
+    this.move = function(dir) {
+        if (dir < 0 && column <= 0) {
+            if (!this.prev())
+                return false;
+            this.printTranslation();
+            column = columnCount;
+            return true;
+        } else if (dir > 0 && column >= columnCount) {
+            if (!this.next())
+                return false;
+        } else {
+            column += dir;
+        }
+        this.printTranslation();
+        return true;
+    };
+
+    this.next = function() {
+        column = -1;
+        position++;
+        if (position < lines.length) {
+            return true;
+        }
+        position = lines.length - 1;
+        return false;
+    };
+
+    this.prev = function() {
+        column = -1;
+        position--;
+        if (position >= 0)
+            return true;
+        position = 0;
+        return false;
+    };
+
+    this.current = function() {
+        return lines[position];
+    };
+
+    this.edit = function() {
+        var acc = 0;
+        for (var i = 0; i < column && i < exploded.length; ++i){
+            var word = Object.keys(exploded[i])[0];
+            acc += word.length;
+        }
+        var line = lines[position];
+        if (line[acc + 1] == ' ') {
+            lines[position] = line.substr(0, acc + 1) + line.substr(acc + 2);
+        } else {
+            lines[position] = line.substr(0, acc + 2) + " " + line.substr(acc + 2);
+        }
+        save();
+        this.print();
+    };
+
+    this.print = function(doAdvance) {
+        advance = doAdvance === true;
+        clearScreen();
+        if (!dict) {
+            write((lines[position] || "").split(" ").map(function(f){return f + " ";}));
+        } else {
+            dictprint(lines[position]);
+        }
+        advance = false;
+    };
+
+    this.setDictionary = function(d) {
+        dict = d;
+    };
+
+    this.printTranslation = function(cycle) {
+        this.print(cycle && lastTranslation == currentEntry);
+        if (!currentEntry)
+            return;
+        console.log("\n");
+        var variant = getNextVariant(currentEntry);
+        lastTranslation = currentEntry;
+        printCentered(variant.$.map(function(f){return "{tx{" + f + "}}";}).join(' {sep{/}} '));
+    };
+
+    function dictprint(src) {
+        exploded = dict.lookUp(src);
+        columnCount = exploded.length;
+        var out = [];
+        exploded.forEach(function(entry, i){
+            var word = Object.keys(entry)[0];
+            var chunk;
+            if (i != column) {
+                chunk = " " + word + " ";
+            } else {
+                currentEntry = entry;
+                currentEntryKey = word;
+                var chosen = word;
+                var variant = getNextVariant(entry);
+                for (var k in variant) {
+                    if (k[0] != "$" && variant[k] === 1) {
+                        chosen = k;
+                        break;
+                    }
+                }
+                chunk = "{sep{[}}";
+                if (chosen != word) {
+                    chunk += word + "{sep{:}}{kana{" + chosen + "}}";
+                } else {
+                    chunk += chosen;
+                }
+                chunk += "{sep{]}}";
+            }
+            out.push(chunk);
+        });
+
+        write(out);
+    }
+
+    function write(words) {
+        (app.shell("stty size")+"").replace(/([0-9]+) ([0-9]+)/, function(m, h, w){
+            width = (w|0) || width;
+            height = (h|0) || height;
+        });
+
+        var lines = [""];
+        words.forEach(function(word){
+            var lastLine = lines[lines.length - 1];
+            if (textWidth(lastLine) + textWidth(word) >= width) {
+                lines[lines.length - 1] = lastLine + "\n";
+                lines.push(word);
+            } else {
+                lines[lines.length - 1] = lastLine + word;
+            }
+        });
+
+        for (var i = 0; i < height / 2 - lines.length / 2; ++i)
+            console.log(i == 0 ? position + "." : "");
+
+        lines.forEach(printCentered);
+    }
+
+    function textWidth(line) {
+        line = line.replace(/\{([a-z]+)\{([^}]+)\}\}/g, function(m, k, t){return t;});
+        var len = 0;
+        for (var i = 0; i < line.length; ++i) {
+            var cc = line.charCodeAt(i);
+            len += 1 + (cc > 128);
+        }
+        return len;
+    }
+
+    function printCentered(line) {
+        var len = textWidth(line);
+        var w = width/2 - len/2;
+        if (w > 0)
+            console.logRaw(" ".repeat(w));
+        console.styled(line);
+    }
+
+    function getNextVariant(entry) {
+        if (advance === undefined)
+            advance = true;
+        var blankCount = 0;
+        for (var i = 0; i < column; ++i) {
+            blankCount += (Object.keys(exploded)[0] == " ")|0;
+        }
+        var variants = Object.values(entry)[0];
+        var selected = selection[position + "x" + (column - blankCount)];
+        if (selected === undefined) {
+            selected = selectionDefaults[currentEntryKey]|0;
+        }
+        if (variants.length && advance) {
+            selected = (selected + 1) % variants.length;
+            if (selected) {
+                selection[position + "x" + (column - blankCount)] = selected;
+                selectionDefaults[currentEntryKey] = selected;
+            } else {
+                delete selection[position + "x" + (column - blankCount)];
+                delete selectionDefaults[currentEntryKey];
+            }
+        }
+        return variants.length ? variants[Math.min(variants.length - 1, selected)] : {$:[]};
+    }
+}
+
+Object.values = function(obj) {
+    if (!obj || typeof obj != "object")
+        return [];
+    var ret = [];
+    for (var k in obj) {
+        ret.push(obj[k]);
+    }
+    return ret;
+};
+
+Object.find = function(obj, cb) {
+    if (!obj || typeof obj != "object")
+        return undefined;
+    for (var k in obj) {
+        if (cb(k, obj[k])) {
+            return obj[k];
+        }
+    }
+};
+
+Array.find = function(arr, cb) {
+    if (!arr || typeof arr != "object")
+        return undefined;
+    for (var i = 0, max = arr.length; i < max; ++i) {
+        if (cb(arr[i])) {
+            return arr[i];
+        }
+    }
+};
+
+try {
+    // readBook("tsuki");
+    // readBook("n6078fg_0");
+    browse();
+} catch(ex) {
+    console.log("Crash:", ex.message, ex.stack);
+}
+
+function browse() {
+    var sources = {};
+    var activeSource = "";
+    var help = [
+        function(){
+            return ["  q or quit: quit yomu reader"];
+        },
+        function(){
+            var ret = ["  s [name] or source [name]: use source. The available sources are:"];
+            for (var k in sources) {
+                ret.push("    " + k);
+            }
+            return ret;
+        }
+    ];
+
+    JSON.parse(app.parse("%appdata/sources.json")).forEach(loadSource);
+
+    while (true) {
+        var input = console.input(activeSource + "> ").trim().split(/\s+/);
+        var cmd = input[0].toLowerCase();
+        switch (cmd) {
+        case "quit":
+        case "q":
+            return;
+
+        case "dict":
+            new JDict(true);
+            break;
+
+        case "source":
+        case "s":
+            if (input[1] in sources) {
+                activeSource = input[1];
+                console.log("Using source \"" + input[1] + "\".");
+            } else {
+                console.log("Invalid source \"" + input[1] + "\".");
+            }
+            break;
+
+        case "h":
+        case "help":
+            help.forEach(function(f){
+                var lines = f().join("\n");
+                if (lines)
+                    console.log(lines);
+            });
+            break;
+
+        default:
+            if (typeof sources[activeSource][cmd] == "function") {
+                sources[activeSource][cmd].apply(sources[activeSource], input.slice(1));
+            }
+        }
+    }
+
+    function loadSource(name) {
+        var src = app.parse("%appdata/sources/" + name + ".txt");
+        if (typeof src != "string") {
+            console.log("Could not load source " + name);
+            return;
+        }
+
+        var inst = eval(src);
+        if (!inst || typeof inst != "object") {
+            console.log("Invalid source " + name);
+            return;
+        }
+
+        sources[name] = inst;
+
+        if (inst.help) {
+            help.push(function(){
+                return (activeSource == name) ? inst.help() : []
+            });
+        }
+    }
+}
+
+function JDict(doInit) {
+    if (doInit) {
+        initData();
+        return;
+    }
+
+    console.log("Loading dictionary");
+    var dict = JSON.parse(app.parse("%appdata/dict.json"));
+    var index = {};
+    var longestWord = 0;
+    console.log("Indexing");
+    dict.forEach(function(entry){
+        for (var k in entry) {
+            if (k[0] == "$")
+                continue;
+            var old = index[k];
+            if (old) {
+                index[k].push(entry)
+            } else {
+                index[k] = [entry];
+            }
+            if (longestWord < k.length)
+                longestWord = k.length;
+            if (entry.$$) {
+                var conj = conjugate(k, entry.$$);
+                for (var j = 0; j < conj.length; ++j) {
+                    var v = conj[j];
+                    var old = index[v];
+                    if (old) {
+                        index[v].push(entry)
+                    } else {
+                        index[v] = [entry];
+                    }
+                    if (longestWord < v.length)
+                        longestWord = v.length;
+                }
+            }
+        }
+    });
+
+    console.log("Done!");
+
+    this.lookUp = function(remaining) {
+        remaining = (remaining + "").trim();
+        var ret = [];
+        for (var i = 0; i < remaining.length; ++i) {
+            var chosen = "";
+            for (var j = 0, max = Math.min(remaining.length - i, longestWord); j < max; ++j) {
+                var acc = remaining.substr(i, j + 1);
+                if (index[acc])
+                    chosen = acc;
+            }
+
+            if (chosen == "") {
+                chosen = remaining[i];
+            }
+
+            var obj = {};
+            obj[chosen] = index[chosen] || [];
+            ret.push(obj);
+            i += chosen.length - 1;
+        }
+        return ret;
+    };
+
+    function initData() {
+        console.log("Init data");
+
+        var dict = [];
+        var dictxml = app.parse("%appdata/dict.xml");
+        length = dictxml.childCount;
+        xmlForEach(dictxml, function(entry){
+            var obj = {
+                $:[]
+            };
+
+            xmlForEach(entry, function(prop){
+                switch (prop.tag) {
+                case "k_ele":
+                case "r_ele":
+                    xmlForEach(prop, function(kreb){
+                        var tag = kreb.tag;
+                        if (tag == "keb" || tag == "reb") {
+                            obj[kreb.text] = tag == "reb" ? 1 : 0;
+                        }
+                    });
+                    break;
+                case "sense":
+                    xmlForEach(prop, function(sense){
+                        if (sense.tag == "gloss") {
+                            obj.$.push(sense.text);
+                        }
+                        if (sense.tag == "pos") {
+                            var text = sense.text.replace(/[&;]/g, "");
+                            if (text in conjugators) {
+                                obj.$$ = text;
+                            }
+                        }
+                    });
+                default:
+                }
+            });
+            dict.push(obj);
+        });
+
+        app.write("%appdata/dict.json", JSON.stringify(dict));
+        console.log("Dictionary written");
+    }
+
+    function xmlForEach(node, cb) {
+        for(var i = 0, max = node.childCount; i < max; ++i) {
+            cb(node.getChild(i));
+        }
+    }
+}
+
+function readBook(bookName) {
+    var cmd = "l";
+    var cmdcc;
+    var currentLanguage = "en";
+    var languages = {jp:null, en:null};
+    var bookmark = {};
+
+    try {
+        var bookmarksrc = app.parse("%appdata/books/" + bookName + "-bookmark.json");
+        if (bookmarksrc) {
+            bookmark = JSON.parse(bookmarksrc);
+        }
+    } catch(ex) {
+        console.input("Creating new bookmark for " + bookName);
+    }
+
+    while (true) {
+        outer: switch (cmd) {
+        case 'q':
+            var bookmark = {};
+            for (var k in languages) {
+                if (languages[k]) {
+                    languages[k].bookmark(bookmark);
+                }
+            }
+            app.write("%appdata/books/" + bookName + "-bookmark.json", JSON.stringify(bookmark, 0, 4));
+
+            clearScreen();
+            return;
+
+        case 'print':
+        case ' ':
+            languages[currentLanguage].print(cmd == ' ');
+            break;
+
+        case 'i':
+            languages[currentLanguage].edit();
+            break;
+
+        case String.fromCharCode(61):
+            languages[currentLanguage].next();
+            cmd = 'print';
+            continue;
+        case String.fromCharCode(45):
+            languages[currentLanguage].prev();
+            cmd = 'print';
+            continue;
+
+        case '\n':
+        case 'n':
+            for (var k in languages) {
+                if (languages[k] && !languages[k].next() && k == currentLanguage) {
+                    return "nextbook";
+                }
+            }
+            cmd = 'print';
+            continue;
+
+        case 'p':
+            for (var k in languages) {
+                if (languages[k] && !languages[k].prev() && k == currentLanguage) {
+                    return "previousbook";
+                }
+            }
+            cmd = 'print';
+            continue;
+
+       case 't':
+            languages[currentLanguage].printTranslation(true);
+            break;
+
+        case 'l':
+            cmd = "q";
+            var languageList = Object.keys(languages);
+            for (var i = 0; i < languageList.length; ++i) {
+                if (languageList[i] == currentLanguage) {
+                    setLanguage(languageList[(i + 1) % languageList.length]);
+                    break;
+                }
+            }
+            if (cmd != "print")
+                setLanguage(currentLanguage);
+            continue;
+
+        case 'f':
+            if (!languages[currentLanguage].move(1)) {
+                return "nextbook";
+            }
+            break;
+
+        case 'j':
+        case 'b':
+            if (!languages[currentLanguage].move(-1)) {
+                return "prevbook";
+            }
+            break;
+
+        case 'h':
+
+
+        case String.fromCharCode(27):
+            switch ((cmdcc = console.getChar(true))) {
+            case 91:
+                switch (cmdcc = console.getChar(true)) {
+                case 65: cmd = "p"; continue; // up
+                case 67: cmd = "f"; continue; // right
+                case 66: cmd = "n"; continue; // down
+                case 68: cmd = "b"; continue; // left
+                default:
+                    break;
+                }
+                break;
+            case 'f'.charCodeAt(0):
+                cmd = 't';
+                continue;
+            case 'j'.charCodeAt(0):
+                cmd = 'i';
+                continue;
+            default:
+            }
+
+        default:
+            console.log("Dunno what " + cmdcc + " is.");
+        }
+        cmdcc = console.getChar(true);
+        cmd = String.fromCharCode(cmdcc);
+    }
+
+    function setLanguage(language) {
+        if (languages[currentLanguage])
+            clearScreen();
+        if (!languages[language]) {
+            var reader = new Reader(bookName, language, bookmark);
+            if (reader.empty()) {
+                return;
+            }
+            languages[language] = reader;
+            if (languages[currentLanguage]) {
+                languages[language].setPosition(languages[currentLanguage].position());
+            }
+            if (language == "jp") {
+                if (!jdict)
+                    jdict = new JDict();
+                languages[language].setDictionary(jdict);
+            }
+        }
+        currentLanguage = language;
+        cmd = "print";
+    }
+}
+
+function char(str) {
+    return str.charCodeAt(0);
+}

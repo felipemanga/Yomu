@@ -1,0 +1,186 @@
+function NCode() {
+    var novels = [];
+
+    try {
+        novels = JSON.parse(app.parse("%appdata/books/ncode.txt"));
+    } catch(ex){}
+
+    function downloadIndex(number) {
+/* */
+            if (!/n[0-9]+[a-z][a-z]/.test(number + "")) {
+                console.log("Invalid NCode");
+                return;
+            }
+            console.log("Looking up " + number);
+            var status = http.get("https://ncode.syosetu.com/" + number + "/");
+            if(status != 200) {
+                console.log("Status code:", status);
+                return;
+            }
+            var index = http.text;
+            console.log("Writing Novel");
+            app.write("%appdata/books/" + number + ".txt", http.text);
+            console.log("OK!");
+/*/
+        var index = app.parse("%appdata/books/n6078fg.txt") + "";
+/* */
+
+        var title = number;
+        var chapters = [];
+        index.replace(/class="novel_sublist2"[\s\S]+?href="([^"]+)">([^<]+)/gmi, function(m, url, title){
+            chapters.push({url, title});
+        });
+        index.replace(/class="novel_title">([^<]+)/i, function(m, t){
+            title = t;
+        });
+        return {
+            title, chapters
+        };
+    }
+
+    function writeLibrary() {
+        app.write("%appdata/books/ncode.txt", JSON.stringify(novels, 0, 2));
+    }
+
+    function getNovelIndex(number) {
+        try {
+            return JSON.parse(app.parse("%appdata/books/" + number + "-nsi.txt"));
+        }catch(ex) {
+            console.styled("Error reading novel. Update to fix." + ex);
+        }
+        return null;
+    }
+
+    function writeNovelIndex(number, index) {
+        app.write("%appdata/books/" + number + "-nsi.txt", JSON.stringify(index, 0, 2));
+    }
+
+    function getNovelBookmark(number) {
+        var index;
+        if (typeof number == "string")
+            index = getNovelIndex(number);
+        else if (number && typeof number == "object")
+            index = number;
+        if (!index)
+            return null;
+        if (!index.bookmark)
+            index.bookmark = {};
+        return index.bookmark;
+    }
+
+    function downloadChapter(chapter, number, bookmark) {
+        var url = "https://ncode.syosetu.com/" + chapter.url;
+        var status = http.get(url);
+        if(status != 200) {
+            console.log("Status code:", status, " url:", url);
+            return false;
+        }
+        var text = [];
+        http.text.replace(/<p id="L[0-9]+">([^<]*)</gi, function(m, line){
+            text.push(line)
+        });
+        app.write("%appdata/books/" + number + "_" + bookmark + "-jp.txt", text.join("\n"));
+        chapter.downloaded = true;
+        return true;
+    }
+
+    Object.assign(this, {
+        addnovel:function(number){
+            number = "n6078fg";
+            if (Array.find(novels, function(novel){novel.number == number;})) {
+                console.styled("Novel {kana{" + number + "}} already added.");
+                return;
+            }
+
+            var index = downloadIndex(number);
+            if (!index || typeof index != "object") {
+                return;
+            }
+
+            writeNovelIndex(number, index);
+            novels.push({
+                number,
+                title:index.title
+            });
+            writeLibrary();
+        },
+
+        update:function(){
+            novels.forEach(function(novel){
+                var number = novel.number;
+                var bookmark = getNovelBookmark(number);
+                var index = downloadIndex(number);
+                if (index && typeof index == "object") {
+                    index.bookmark = bookmark;
+                    app.write("%appdata/books/" + number + "-nsi.txt", JSON.stringify(index, 0, 2));
+                } else {
+                    console.log("Could not update novel {kana{" + number + "}}.");
+                }
+            });
+        },
+
+        novels:function() {
+            novels.forEach(function(novel){
+                console.styled("  {sep{(}}{kana{" + novel.number + "}}{sep{)}} " + novel.title + "\n");
+            });
+        },
+
+        read:function(number) {
+            var novel = Array.find(novels, function(novel){return novel.number == number;});
+            if (!novel) {
+                console.styled("Could not find novel \"{kana{" + number + "}}\n");
+                return;
+            }
+            var index = getNovelIndex(number);
+            if (!index) {
+                return;
+            }
+            var bookmark = getNovelBookmark(index);
+            if (!bookmark) {
+                return;
+            }
+            while (true) {
+                var chapter = index.chapters[bookmark.chapter|0];
+                while (!chapter && bookmark.chapter) {
+                    --bookmark.chapter;
+                    chapter = index.chapters[bookmark.chapter];
+                }
+                if (!chapter) {
+                    console.styled("Could not find chapter.\n");
+                    return;
+                }
+                if (!chapter.downloaded) {
+                    if (!downloadChapter(chapter, number, bookmark.chapter|0))
+                        return;
+                    writeNovelIndex(number, index);
+                }
+                var cmd = readBook(number + "_" + (bookmark.chapter|0));
+                if (cmd == "prevbook") {
+                    bookmark.chapter = Math.max(0, (bookmark.chapter|0) - 1);
+                    continue;
+                }
+                if (cmd == "nextbook") {
+                    bookmark.chapter = Math.min(index.chapters.length, (bookmark.chapter|0) + 1);
+                    continue;
+                }
+                break;
+            }
+        },
+
+        help: function() {
+            return [
+                "  a [ncode] or addNovel [ncode]. Downloads a LN. Ex: a n6078fg",
+                "  n or novels. Lists downloaded novels.",
+                "  u or update. Updates all downloaded novels.",
+                "  r [ncode] or read [ncode]. Read a novel."
+            ];
+        }
+    });
+
+    for (var k in this) {
+        if (k.length > 1 && typeof this[k] == "function")
+            this[k[0]] = this[k];
+    }
+}
+
+new NCode();
