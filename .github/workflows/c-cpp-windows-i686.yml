@@ -1,0 +1,84 @@
+name: Windows i686 CI
+
+on:
+  push:
+    branches: [ development ]
+  pull_request:
+    branches: [ development ]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW32
+        release: false
+        update: false
+        install: >-
+          base-devel
+          git
+          mingw-w64-i686-gcc
+          mingw-w64-i686-openssl
+          mingw-w64-i686-v8 
+          mingw-w64-i686-SDL2 
+          mingw-w64-i686-SDL2_image 
+          mingw-w64-i686-lcms2 
+          mingw-w64-i686-lua 
+          mingw-w64-i686-freetype
+          mingw-w64-i686-glew
+    - uses: actions/checkout@v2
+      with:
+        submodules: 'true'
+    - shell: msys2 {0}
+      run: |
+        make -j 4
+        cp /mingw32/bin/libgcc_s_dw2-1.dll ./
+        cp /mingw32/bin/libstdc++-6.dll ./
+        cp /mingw32/bin/libwinpthread-1.dll ./
+        cp /mingw32/bin/libfreetype-6.dll ./
+        cp /mingw32/bin/liblcms2-2.dll ./
+        cp /mingw32/bin/glew32.dll ./
+        cp /mingw32/bin/lua54.dll ./
+        cp /mingw32/bin/libpng16-16.dll ./
+        cp /mingw32/bin/libv8.dll ./
+        cp /mingw32/bin/SDL2_image.dll ./
+        cp /mingw32/bin/SDL2.dll ./
+        cp /mingw32/bin/libv8_libplatform.dll ./
+        cp /mingw32/bin/libbz2-1.dll ./
+        cp /mingw32/bin/libbrotlidec.dll ./
+        cp /mingw32/bin/libharfbuzz-0.dll ./
+        cp /mingw32/bin/zlib1.dll ./
+        cp /mingw32/bin/libwebp-7.dll ./
+        cp /mingw32/bin/libjpeg-8.dll ./
+        cp /mingw32/bin/libtiff-5.dll ./
+        cp /mingw32/bin/libv8_libbase.dll ./
+        cp /mingw32/bin/libcrypto-1_1.dll ./
+        cp /mingw32/bin/libssl-1_1.dll ./
+        cp /mingw32/bin/libssp-0.dll ./
+        cp /mingw32/bin/libicuin69.dll ./
+        cp /mingw32/bin/libicuuc69.dll ./
+        cp /mingw32/bin/libicudt69.dll ./
+        cp /mingw32/bin/libpcre-1.dll ./
+        cp /mingw32/bin/libintl-8.dll ./
+        cp /mingw32/bin/libiconv-2.dll ./
+        cp /mingw32/bin/libbrotlicommon.dll ./
+        cp /mingw32/bin/libglib-2.0-0.dll ./
+        cp /mingw32/bin/libgraphite2.dll ./
+        cp /mingw32/bin/libdeflate.dll ./
+        cp /mingw32/bin/libjbig-0.dll ./
+        cp /mingw32/bin/libLerc.dll ./
+        cp /mingw32/bin/libzstd.dll ./
+        cp /mingw32/bin/liblzma-5.dll ./
+        cp /mingw32/bin/snapshot_blob.bin ./
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: dotto-development-windows-i686
+        path: |
+          dotto.exe
+          data
+          snapshot_blob.bin
+          *.dll
