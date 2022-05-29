@@ -1,0 +1,71 @@
+var argosPath = config.get("argos");
+var endpoint = "https://translate.argosopentech.com/translate";
+
+if (typeof argosPath != "string")
+    argosPath = "";
+
+function ArgosOnline(from, to, endpoint) {
+    if (!endpoint)
+        endpoint = argosPath;
+
+    this.translate = function(text) {
+        console.log("Fetching translation");
+
+        var request = getTranslateRequest(text);
+        var ret = http.post(endpoint, JSON.stringify(request), "application/json");
+
+        if (ret == 200) {
+            try {
+                return JSON.parse(http.text).translatedText;
+            } catch (ex) {}
+        }
+
+        console.log("Error: " + ret + "\nRequest:\n" + JSON.stringify(request, 0, 2) + "\nResult:\n" + http.text);
+
+        return text;
+    };
+
+    function getTranslateRequest(text) {
+        return {
+            q:text,
+            source: from,
+            target: to
+        };
+    }
+}
+
+function ArgosOffline(from, to) {
+    this.isFree = true;
+    this.translate = function(text, retry) {
+        if (retry) {
+            return (new ArgosOnline(from, to, endpoint)).translate(text);
+        }
+        return (app.shell(argosPath + " --from-lang " + from + " --to-lang " + to + " " + JSON.stringify(text)) + "").trim();
+    };
+}
+
+function ArgosNull() {
+    this.translate = function(text) {
+        return text;
+    };
+};
+
+var Argos = ArgosNull;
+
+if (/^https?:/i.test(argosPath)) {
+    Argos = ArgosOnline;
+    console.log("Using online translation");
+} else if (argosPath && typeof app.shell(argosPath) == "string") {
+    Argos = ArgosOffline;
+    console.log("Using offline translation");
+} else if (typeof app.shell("argos-translate") == "string") {
+    argosPath = "argos-translate";
+    Argos = ArgosOffline;
+    console.log("Using offline translation");
+} else {
+    argosPath = endpoint;
+    Argos = ArgosOnline;
+    console.log("Using online translation");
+}
+
+plugins["jp-en"] = new Argos("ja", "en");
