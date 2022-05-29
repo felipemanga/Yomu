@@ -15,8 +15,6 @@ ifeq ($(OS),Windows_NT)
     LN_FLAGS += -lopengl32
     LN_FLAGS += -lglew32
 
-    CPP_FLAGS += -DLCMS2_SUPPORT
-    LN_FLAGS += -llcms2
     LN_FLAGS += -lole32
     LN_FLAGS += -lws2_32
     LN_FLAGS += -lcrypt32
@@ -67,8 +65,6 @@ else
         endif
 
 	LN_FLAGS += -lGL
-        CPP_FLAGS += -DLCMS2_SUPPORT
-	LN_FLAGS += -llcms2
 	LN_FLAGS += -lX11 -lXi
     endif
 
@@ -79,8 +75,6 @@ else
 	CPP_FLAGS += -DGL_SILENCE_DEPRECATION
 	LN_FLAGS += -framework OpenGL
 	LN_FLAGS += -framework Foundation
-        CPP_FLAGS += -DLCMS2_SUPPORT
-	LN_FLAGS += -llcms2
     endif
 
     # ifneq ($(filter %86,$(UNAME_P)),)
@@ -108,11 +102,17 @@ ifeq ($(BACKEND),SDL1)
     CPP_FLAGS += $(shell $(PKGCONFIG) --cflags sdl)
     LN_FLAGS += $(shell $(PKGCONFIG) --libs sdl)
     LN_FLAGS += -lSDL_image
-else
+endif
+
+ifeq ($(BACKEND),SDL2)
     CPP_FLAGS += -DUSE_SDL2
     CPP_FLAGS += $(shell $(PKGCONFIG) --cflags sdl2)
     LN_FLAGS += $(shell $(PKGCONFIG) --libs sdl2)
     LN_FLAGS += -lSDL2_image
+endif
+
+ifeq ($(BACKEND),TERM)
+    CPP_FLAGS += -DUSE_TERM
 endif
 
 ifeq ($(USE_FREETYPE),false)
@@ -147,7 +147,6 @@ POSTBUILD = $(STRIP) $(PROJECT)
 endif
 
 FLAGS += -pthread
-LN_FLAGS += -lpng
 LN_FLAGS += -lm
 
 OBJ = $(patsubst %,$(ODIR)/%.o,$(CPP_FILES))
