@@ -1,2 +1,3 @@
 Argos
 JDict
+VoiceVox

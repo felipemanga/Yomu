@@ -1,0 +1,227 @@
+var endpoint = (config.get("voicevox") + "").trim();
+var speaker = config.get("speaker")|0;
+
+/*
+#!node
+
+const http = require("node:http");
+const fs = require("node:fs");
+const exec = require("node:child_process").execSync;
+const process = require('node:process');
+
+class VoiceVox {
+    #server;
+
+    constructor(server) {
+        this.#server = server;
+        this.speaker = 0;
+    }
+
+    async speakers() {
+        return JSON.parse(await this.#GET(endpoint + `/speakers`))
+    }
+
+    async say(text) {
+        const query = await this.audio_query(text);
+        const synth = await this.synthesis(this.speaker, text[text.length - 1] == '?', query);
+        await new Promise((ok, nok) => {
+            fs.writeFile("tmp.wav", synth, error=>{
+                if (error) nok(error);
+                else ok();
+            });
+        });
+        await this.playWAV('./tmp.wav');
+    }
+
+    async audio_query(text, speaker) {
+        speaker = speaker || this.speaker;
+        return this.#parseJSON(await this.#POST(endpoint + `/audio_query?text=${encodeURIComponent(text)}&speaker=${speaker}`, '', {accept:'application/json'}));
+    }
+
+    async synthesis(speaker, interrogative, query) {
+        speaker = speaker || this.speaker;
+        return await this.#POST(endpoint + `/synthesis?speaker=${speaker}&enable_interrogative_upspeak=${JSON.stringify(!!query)}`, JSON.stringify(query), {accept:'audio/wav'});
+    }
+
+    async playWAV(name) {
+        for (let player of [`powershell -c (New-Object Media.SoundPlayer "${name}").PlaySync();`,
+                            `mplayer ${name}`,
+                            `afplay ${name}`,
+                            `mpg123 ${name}`,
+                            `mpg321 ${name}`,
+                            `play ${name}`,
+                            `omxplayer ${name}`,
+                            `aplay ${name}`,
+                            `cmdmp3 ${name}`,
+                            `cvlc ${name}`]) {
+            try {
+                exec(player);
+                break;
+            } catch (ex){}
+        }
+    }
+
+    #parseJSON(bytes) {
+        return JSON.parse(typeof bytes == 'string' ? bytes : Buffer.from(bytes).toString('utf-8'));
+    }
+
+    async #GET(url) {
+        return new Promise((ok, nok) => {
+            http.get(url, res => {
+                let data = '';
+                res.setEncoding('utf8');
+                res.on('data', chunk => {data += chunk;});
+                res.on('end', () => ok(data));
+            }).on('error', err => nok(err));
+        });
+    }
+
+    async #POST(url, body, params) {
+        return new Promise((ok, nok) => {
+            const parts = new URL(url);
+            const options = {
+                host: parts.hostname,
+                port: parts.port,
+                path: parts.pathname + parts.search,
+                method: 'POST',
+                headers: Object.assign({
+                    'Content-Type': 'application/json',
+                    'Content-Length': Buffer.byteLength(body)
+                }, params)
+            };
+
+            const req = http.request(options, (res) => {
+                // console.log(`REQUEST: ${url}`);
+                // console.log(`STATUS: ${res.statusCode}`);
+                // console.log(`HEADERS: ${JSON.stringify(res.headers)}`);
+                if (params.accept == 'application/json') {
+                    res.setEncoding('utf8');
+                    let data = '';
+                    res.on('data', chunk => {data += chunk;});
+                    res.on('end', () => ok(data));
+                } else {
+                    let data = [];
+                    res.on('data', chunk => {data.push(chunk);});
+                    res.on('end', () => {
+                        let size = 0;
+                        for (let chunk of data)
+                            size += chunk.length;
+                        let acc = new Uint8Array(size);
+                        size = 0;
+                        for (let chunk of data) {
+                            for (let b of chunk)
+                                acc[size++] = b;
+                        }
+                        ok(acc);
+                    });
+                }
+            });
+
+            req.on('error', (e) => {
+                nok(e);
+            });
+
+            req.write(body);
+            req.end();
+        });
+    }
+}
+
+async function voiceTest() {
+    try {
+        const voicevox = new VoiceVox("http://192.168.1.101:50021");
+        let speakers = await voicevox.speakers();
+        for (let i = 0; i < speakers.length; ++i) {
+            if ([0, 14, 15, 16].indexOf(i) == -1) // whitelist
+                continue;
+            console.log(`${i}: ${speakers[i].name}`);
+            voicevox.speaker = i;
+            await voicevox.say("大陸には、陸地を横断するような山脈が存在している。");
+        }
+    } catch (ex) {
+        console.error(ex);
+    }
+}
+
+async function app() {
+    const voicevox = new VoiceVox("http://192.168.1.101:50021");
+    voicevox.speaker = 14;
+    const text = process.argv.slice(2).join(' ');
+    switch (text) {
+    case '-r':
+        voicevox.playWAV('./tmp.wav');
+        break;
+    case '-t':
+        voiceTest();
+        break;
+    default:
+        voicevox.say(text);
+        break;
+    }
+}
+
+app();
+*/
+
+function VVOnline(endpoint) {
+    var prevText;
+
+    this.synthesize = function(args) {
+        var text = (args.source.current() + '').replace(/\s/g, '');
+        if (prevText != text) {
+            console.log(" [s] ");
+            var query = audio_query(text);
+            // app.write("%appdata/query.json", text + "\n" + query);
+
+            const synth = synthesis(text[text.length - 1] == '?', query);
+            if (synth) {
+                app.write("/tmp/voicevox.txt", synth);
+                console.log("\n" + JSON.parse(query).kana + "\n");
+                prevText = text;
+            }
+        }
+
+        this.play();
+    };
+
+    this.play = function() {
+        app.shell("aplay /tmp/voicevox.txt > /dev/null 2> /dev/null");
+    };
+
+    function audio_query(text) {
+        var state = http.post(
+            endpoint + '/audio_query?text=' + encodeURIComponent(text) + '&speaker=' + speaker,
+            ''
+        );
+        if (state == -1)
+            return;
+        return http.text;
+    }
+
+    function synthesis(interrogative, query) {
+        var state = http.post(
+            endpoint +
+            '/synthesis?speaker=' + speaker +
+            '&enable_interrogative_upspeak=' + JSON.stringify(!!query),
+            query,
+            'application/json'
+        );
+        if (state != 200) {
+            console.log("Synthesis error: " + state + "\n" + http.error);
+            return;
+        }
+        return http.bytes;
+    }
+
+}
+
+if (typeof endpoint == "string") {
+    console.log("Using online dictation");
+    const vv = new VVOnline(endpoint);
+    plugins.jp = Object.assign(plugins.jp || {},
+                               {
+                                   "press:s":vv.synthesize.bind(vv),
+                                   "press:S":vv.play.bind(vv),
+                               });
+}
+
