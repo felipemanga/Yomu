@@ -40,6 +40,7 @@ public:
       addProperty("text", [=]{return String{bytes.begin(), bytes.end()};});
       addProperty("url", [=]{return url;});
       addProperty("error", [=]{return error;});
+      addProperty("bytes", [=]{return script::Value(bytes.data(), bytes.size(), false);});
       makeGlobal("http");
     }
 
