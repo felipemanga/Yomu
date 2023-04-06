@@ -86,7 +86,7 @@ function NCode() {
 
     Object.assign(this, {
         addnovel:function(number){
-            number = "n6078fg";
+            // number = "n6078fg";
             if (Array.find(novels, function(novel){novel.number == number;})) {
                 console.styled("Novel {kana{" + number + "}} already added.");
                 return;
