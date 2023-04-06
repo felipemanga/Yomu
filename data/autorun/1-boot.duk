@@ -38,7 +38,7 @@ function Reader(bookName, language, bookmark, lineSource){
     var position = 0;
     var column = -1;
     var columnCount = 0;
-    var dict;
+    var dict, pluginSet;
     var lastTranslation;
     var currentEntry, currentEntryKey;
     var selection = {};
@@ -70,10 +70,11 @@ function Reader(bookName, language, bookmark, lineSource){
     }
 
     if (plugins[language]) {
-        if (typeof plugins[language] == "function") {
-            plugins[language] = new plugins[language]();
+        pluginSet = plugins[language];
+        dict = pluginSet.dictionary;
+        if (typeof dict == "function") {
+            dict = new dict();
         }
-        dict = plugins[language];
     }
 
     if (lineSource) {
@@ -82,6 +83,8 @@ function Reader(bookName, language, bookmark, lineSource){
         }
         translator = plugins[lineSource.language() + "-" + language];
     }
+
+    this.pluginSet = pluginSet;
 
     this.language = function() {return language;};
 
@@ -160,8 +163,11 @@ function Reader(bookName, language, bookmark, lineSource){
             ret = lineSource.current();
             var name = lineSource.language() + "-" + language;
             if (translator && translator.translate) {
-                ret = lines[position] = translator.translate(ret, retranslate);
-                save();
+                ret = translator.translate(ret, retranslate);
+                if (translator.cache !== false) {
+                    lines[position] = ret;
+                    save();
+                }
             } else {
                 ret = language + " <= " + lineSource.language() + ": " + ret;
             }
@@ -570,7 +576,14 @@ function readBook(bookName) {
             }
 
         default:
-            console.log("Dunno what " + cmdcc + " is.");
+            var pluginSet = languages[currentLanguage].pluginSet;
+            if (pluginSet && typeof pluginSet["press:" + cmd] == "function") {
+                pluginSet["press:" + cmd]({
+                    source:languages[currentLanguage]
+                })
+            } else {
+                console.log("Dunno what " + cmdcc + " is.");
+            }
         }
         cmdcc = console.getChar(true);
         cmd = String.fromCharCode(cmdcc);
