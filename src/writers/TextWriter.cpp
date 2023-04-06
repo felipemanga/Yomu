@@ -4,15 +4,22 @@
 
 #include <common/Writer.hpp>
 #include <log/Log.hpp>
+#include <script/Value.hpp>
 
 using namespace fs;
 
 class TextWriter : public Writer {
 public:
     bool writeFile(std::shared_ptr<File> file, const Value& data) override {
-        auto str = data.toString();
-        auto written = file->write(str.data(), str.size());
-        return written == str.size();
+        if (data.has<script::Value::Buffer*>()) {
+            auto buffer = data.get<script::Value::Buffer*>();
+            auto written = file->write(buffer->data(), buffer->size());
+            return written == buffer->size();
+        } else {
+            auto str = data.toString();
+            auto written = file->write(str.data(), str.size());
+            return written == str.size();
+        }
     }
 };
 
